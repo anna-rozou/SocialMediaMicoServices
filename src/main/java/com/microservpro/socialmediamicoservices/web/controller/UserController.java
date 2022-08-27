@@ -5,6 +5,8 @@ import com.microservpro.socialmediamicoservices.services.UserService;
 import com.microservpro.socialmediamicoservices.web.model.UserDto;
 import com.microservpro.socialmediamicoservices.web.model.UserDtoV2;
 import org.apache.catalina.User;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RequestMapping("/api/v1/user")
 @RestController
@@ -34,13 +39,19 @@ public class UserController {
 
     @GetMapping(path = "/{userId}", params = "version1")
     //@ResponseStatus(HttpStatus.FOUND)
-    public UserDto getUserV1(@PathVariable("userId") UUID userId){
+    public EntityModel<UserDto> getUserV1(@PathVariable("userId") UUID userId){
 
         UserDto returnedUser = userService.getUserDetails(userId);
         if (returnedUser == null){
             throw new UserNotFoundException("UserNotFound userId: " + userId);
         }
-        return returnedUser;
+
+        EntityModel<UserDto> entityModel = EntityModel.of(returnedUser);
+        WebMvcLinkBuilder link = linkTo(methodOn(this.getClass()).getAll());
+
+        entityModel.add(link.withRel("allUsers"));
+
+        return entityModel;
     }
 
     @GetMapping(path = "/{userId}", params = "version2")
